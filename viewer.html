@@ -1,56 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PDF.js Viewer</title>
+  <title>PDF Viewer</title>
+  <script src="https://yncv.github.io/pdf.mjs"></script>
+  <script src="https://yncv.github.io/pdf.worker.mjs"></script>
   <style>
-    body {
+    /* 簡単なスタイル設定 */
+    body, html {
       margin: 0;
+      padding: 0;
+      height: 100%;
       overflow: hidden;
     }
-    #pdf-canvas {
-      width: 100vw;
-      height: 100vh;
+    #viewerContainer {
+      width: 100%;
+      height: 100%;
     }
   </style>
-  <script type="module">
-    import * as pdfjsLib from 'https://yncv.github.io/pdf.mjs';
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://yncv.github.io/pdf.worker.mjs';
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const url = urlParams.get('file');
-
-      const loadingTask = pdfjsLib.getDocument(url);
-      loadingTask.promise.then(pdf => {
-        console.log('PDF loaded');
-        const pageNumber = 1;
-        pdf.getPage(pageNumber).then(page => {
-          console.log('Page loaded');
-
-          const scale = 1.5;
-          const viewport = page.getViewport({ scale: scale });
-
-          const canvas = document.getElementById('pdf-canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-
-          const renderContext = {
-            canvasContext: context,
-            viewport: viewport
-          };
-          const renderTask = page.render(renderContext);
-          renderTask.promise.then(() => {
-            console.log('Page rendered');
-          });
-        });
-      }, reason => {
-        console.error(reason);
-      });
-    });
-  </script>
 </head>
 <body>
-  <canvas id="pdf-canvas"></canvas>
+  <div id="viewerContainer"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var url = new URL(window.location.href);
+      var file = url.searchParams.get("file") || "sample.pdf";
+      if (file) {
+        const loadingTask = pdfjsLib.getDocument(file);
+        loadingTask.promise.then(pdf => {
+          pdf.getPage(1).then(page => {
+            const scale = 1.5;
+            const viewport = page.getViewport({ scale: scale });
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            document.getElementById('viewerContainer').appendChild(canvas);
+
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport
+            };
+            page.render(renderContext);
+          });
+        }).catch(error => {
+          console.error(error);
+        });
+      } else {
+        console.error('No file parameter provided');
+      }
+    });
+  </script>
 </body>
 </html>
