@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PDF.js Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    #pdf-canvas {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+  <script type="module">
+    import * as pdfjsLib from './pdf.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = './pdf.worker.mjs';
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const url = urlParams.get('file');
+
+      const loadingTask = pdfjsLib.getDocument(url);
+      loadingTask.promise.then(pdf => {
+        console.log('PDF loaded');
+        const pageNumber = 1;
+        pdf.getPage(pageNumber).then(page => {
+          console.log('Page loaded');
+
+          const scale = 1.5;
+          const viewport = page.getViewport({ scale: scale });
+
+          const canvas = document.getElementById('pdf-canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          const renderContext = {
+            canvasContext: context,
+            viewport: viewport
+          };
+          const renderTask = page.render(renderContext);
+          renderTask.promise.then(() => {
+            console.log('Page rendered');
+          });
+        });
+      }, reason => {
+        console.error(reason);
+      });
+    });
+  </script>
+</head>
+<body>
+  <canvas id="pdf-canvas"></canvas>
+</body>
+</html>
